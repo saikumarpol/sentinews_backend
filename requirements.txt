@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+requests
+python-dotenv
+feedparser
+sqlmodel
+sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+httpx
+aiofiles==23.1.0
+yfinance
+pandas
+nsepython
