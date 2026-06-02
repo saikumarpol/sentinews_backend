@@ -42,6 +42,16 @@ from routers import stock_detail, portfolio, indian_market, market_reports, scre
 
 app = FastAPI(title="Sentinews API", version="0.1.0")
 
+# ---------- CORS ----------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,   # must be False when allow_origins=["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Include routers
 app.include_router(stock_detail.router)
 app.include_router(portfolio.router)
@@ -50,7 +60,7 @@ app.include_router(market_reports.router)
 app.include_router(screener.router)
 app.include_router(daily_news.router)
 
-# ---------- GLOBAL EXCEPTION HANDLER (CORS FIX) ----------
+# ---------- GLOBAL EXCEPTION HANDLER ----------
 from fastapi.responses import JSONResponse
 from fastapi import Request
 
@@ -70,16 +80,6 @@ async def global_exception_handler(request: Request, exc: Exception):
             "Access-Control-Allow-Headers": "*",
         }
     )
-
-# ---------- CORS ----------
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,   # must be False when allow_origins=["*"]
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ---------- Twelve Data config (free data) ----------
 
