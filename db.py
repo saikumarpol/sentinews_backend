@@ -1,12 +1,13 @@
 # backend/db.py
 
+import os
 from typing import Optional
 from datetime import datetime
 
 from sqlmodel import SQLModel, Field, create_engine, Session
 from sqlalchemy import UniqueConstraint
 
-DATABASE_URL = "sqlite:///./sentinews.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sentinews.db")
 engine = create_engine(DATABASE_URL, echo=False)
 
 
