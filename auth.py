@@ -24,15 +24,25 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # Optional scheme — doesn't raise 401 if no token present (for public routes)
 oauth2_optional = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
 
 def hash_password(password: str) -> str:
+    # bcrypt supports max 72 bytes
+    password = password[:72]
     return pwd_context.hash(password)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        plain = plain[:72]
+        return pwd_context.verify(plain, hashed)
+    except Exception as e:
+        print(f"Password verification error: {e}")
+        return False
 
 
 def create_access_token(

@@ -15,8 +15,17 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlmodel import select
+from src.schemas.schemas import (
+    SignupBody,
+    ForgotPasswordBody,
+    NoteBody,
+    NoteResponse,
+    SearchResult,
+    PerformanceResponse,
+    DigestRequest,
+)
 
 # Load environment variables from .env
 load_dotenv()
@@ -229,9 +238,11 @@ class DigestRequest(BaseModel):
     watchlist: Optional[List[str]] = []
 
 
-class SignupBody(BaseModel):
-    email: str
-    password: str
+from pydantic import BaseModel
+
+# class SignupBody(BaseModel):
+#     email: str
+#     password: str
 
 
 class ForgotPasswordBody(BaseModel):
@@ -339,55 +350,86 @@ async def health():
 
 @app.post("/signup")
 def signup(body: SignupBody):
-    """
-    Create a new user with email + password, return JWT token.
-    """
+
+    email_clean = body.email.lower().strip()
+
+    if len(body.password) > 72:
+        raise HTTPException(
+        status_code=400,
+        detail="Password must be 72 characters or fewer"
+    )       
+
     with get_session() as session:
-        email_clean = body.email.lower().strip()
+
         existing = session.exec(
             select(User).where(User.email == email_clean)
         ).first()
+
         if existing:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
+                status_code=400,
+                detail="Email already registered"
             )
 
         user = User(
             email=email_clean,
-            hashed_password=hash_password(body.password),
+            hashed_password=hash_password(body.password)
         )
+
         session.add(user)
         session.commit()
         session.refresh(user)
 
-    token = create_access_token({"user_id": user.id})
-    return {"access_token": token, "token_type": "bearer"}
+    token = create_access_token(
+        {"user_id": user.id}
+    )
 
-
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "email": user.email
+        }
+    }
 @app.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Login with email + password (email is sent as `username`), return JWT.
-    """
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
+
+    email_clean = form_data.username.lower().strip()
+
     with get_session() as session:
-        email_clean = form_data.username.lower().strip()
+
         user = session.exec(
-            select(User).where(User.email == email_clean)
+            select(User).where(
+                User.email == email_clean
+            )
         ).first()
 
-        if not user or not verify_password(
-            form_data.password, user.hashed_password
-        ):
+        if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
+                status_code=401,
+                detail="Incorrect email or password"
             )
 
-    token = create_access_token({"user_id": user.id})
-    return {"access_token": token, "token_type": "bearer"}
+        if not verify_password(
+            form_data.password,
+            user.hashed_password
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Incorrect email or password"
+            )
 
+    token = create_access_token(
+        {"user_id": user.id}
+    )
 
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
 @app.post("/forgot-password")
 def forgot_password(body: ForgotPasswordBody):
     """
