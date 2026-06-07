@@ -23,7 +23,17 @@ def create_access_token(
     return encoded_jwt
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(
+            plain_password[:72],
+            hashed_password
+        )
+    except Exception:
+        return False
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password[:72])
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
